@@ -13,5 +13,5 @@ as possible.
 #### Link to Discord Server : [The Geek Corner](https://discord.gg/0posucgIpaVdr07J)
 
 ### Contributors
-__@Milhound__ < Milhound@gmail.com > - Main Developer\
+__@Milhound__ < Milhound@gmail.com > - Main Developer  
 __@Estrobeda__ - The Linux Guy
