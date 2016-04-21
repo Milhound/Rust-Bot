@@ -1,0 +1,7 @@
+[package]
+name = "rust-bot"
+version = "0.1.0"
+authors = ["Daniel <Daniel.Milholland@icloud.com>"]
+
+[dependencies]
+discord = { git = "https://github.com/SpaceManiac/discord-rs.git" }
