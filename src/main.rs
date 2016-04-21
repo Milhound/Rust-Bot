@@ -41,12 +41,17 @@ fn main() {
 					//{:?} used to unwrap tuple over {} for literal
 					//USER_ID = pub struct UserId(pub u64);
 					//Use .0 to access the first value of a struct like an Array
+					
+					// Pong returns @user, Pong
 					let pong = format!("<@{:?}>, Pong", &message.author.id.0);
 					let _ = discord.send_message(&message.channel_id, &pong , "", false);},
+					// Info returns Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.
 					"/info" => { let _ = discord.send_message(&message.channel_id, "Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.", "", false);},
+    				// Test returns This is a reply to the test.
     				"/test" => { let _ = discord.send_message(&message.channel_id, "This is a reply to the test.", "", false); },
+					// Help returns If your seeking help from this bot you may not find it.
 					"/help" => { let _ = discord.send_message(&message.channel_id, "If your seeking help from this bot you may not find it.", "", false); },
-					"/Blah" => { let _ = discord.send_message(&message.channel_id, "Testing Nonce", "", false); },
+					// Force Closes the bot
 					"/quit" => {println!("Quitting..."); break},
 					_ => continue,
 					
