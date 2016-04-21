@@ -14,18 +14,40 @@ fn main() {
 	println!("Ready...");
 	loop {
 		match connection.recv_event() {
+		/*
 			Ok(Event::MessageCreate(message)) => {
+				pub struct Message {
+			    pub id: MessageId,
+			    pub channel_id: ChannelId,
+			    pub content: String,
+			    pub nonce: Option<String>,
+			    pub tts: bool,
+			    pub timestamp: String,
+			    pub edited_timestamp: Option<String>,
+			    pub author: User,
+			    pub mention_everyone: bool,
+			    pub mentions: Vec<User>,
+			    pub attachments: Vec<Attachment>,
+			    pub embeds: Vec<Value>,
+			}
+		*/
+			
 				println!("{} says: {}", message.author.name, message.content);
 
 				match message.content.as_ref() { 
-					//Message format .send_message(channel, "Response", "Nonce", tts:bool);
+					//fn send_message(&self, channel: &ChannelId, text: &str, nonce: &str, tts: bool) -> Result<Message>
 					"!ping" => { 
-					let pong = format!("{}, Pong", &message.author.name);
+					// Format! used to convert (String::collections, &str) to simple &str
+					//{:?} used to unwrap tuple over {} for literal
+					//USER_ID = pub struct UserId(pub u64);
+					//Use .0 to access the first value of a struct like an Array
+					let pong = format!("<@{:?}>, Pong", &message.author.id.0);
 					let _ = discord.send_message(&message.channel_id, &pong , "", false);},
-    				"!test" => { let _ = discord.send_message(&message.channel_id, "This is a reply to the test.", "", false); },
-					"!help" => { let _ = discord.send_message(&message.channel_id, "If your seeking help from this bot you may not find it.", "", false); },
-					"!Blah" => { let _ = discord.send_message(&message.channel_id, "Testing Nonce", "", false); },
-					"!quit" => {println!("Quitting..."); break},
+					"/info" => { let _ = discord.send_message(&message.channel_id, "Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.", "", false);},
+    				"/test" => { let _ = discord.send_message(&message.channel_id, "This is a reply to the test.", "", false); },
+					"/help" => { let _ = discord.send_message(&message.channel_id, "If your seeking help from this bot you may not find it.", "", false); },
+					"/Blah" => { let _ = discord.send_message(&message.channel_id, "Testing Nonce", "", false); },
+					"/quit" => {println!("Quitting..."); break},
 					_ => continue,
 					
 				}
