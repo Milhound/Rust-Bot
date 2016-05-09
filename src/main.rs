@@ -24,7 +24,7 @@ fn get_cat() -> Result<String, Box<Error>> {
 
 fn main() {
     let discord = Discord::from_bot_token(&env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN")).expect("Discord Token Error");
-    println!("{:?}", &env::var("RUST_BOT_TOKEN"));
+    println!("{:?}", &env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN"));
 	let (mut connection, _) = discord.connect().expect("Connection Failed.");
 	println!("Ready...");
 
@@ -34,12 +34,12 @@ fn main() {
 				println!("{} says: {}", message.author.name, message.content);
                 match message.content.as_ref() {
 
-                    "!cat" => {
+                    "/cat" => {
                         if let Ok(s) = get_cat() {
                             println!("{}", s);
                         }
                     },
-                    "!ping" => {
+                    "/ping" => {
                         let pong = format!("<@{:?}>, Pong", &message.author.id.0);
                         let _ = discord.send_message(&message.channel_id, &pong , "", false);
                     },
