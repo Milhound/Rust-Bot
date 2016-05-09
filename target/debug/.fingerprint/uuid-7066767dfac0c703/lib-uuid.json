@@ -1,1 +1,1 @@
-{"rustc":10772311102024838230,"target":4922491483470939262,"profile":13023446655302672390,"local":{"variant":"Precalculated","fields":["0.2.0"]},"features":"Some([\"rand\", \"v4\"])","deps":[["rand v0.3.14",12251611827153101877]]}
+{"rustc":712532066948670400,"target":2054148530611857902,"profile":13023446655302672390,"local":{"variant":"Precalculated","fields":["0.2.0"]},"features":"Some([\"rand\", \"v4\"])","deps":[["rand v0.3.14",5254880958201476804]]}

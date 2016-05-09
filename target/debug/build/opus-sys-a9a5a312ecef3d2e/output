@@ -1,4 +1,2 @@
-cargo:root=/home/ubuntu/workspace/target/debug/build/opus-sys-a9a5a312ecef3d2e/out
-cargo:rustc-link-search=native=/home/ubuntu/workspace/target/debug/build/opus-sys-a9a5a312ecef3d2e/out/lib
-cargo:rustc-link-lib=static=opus
-cargo:rustc-link-lib=m
+cargo:rustc-link-search=native=/usr/local/Cellar/opus/1.1.2/lib
+cargo:rustc-link-lib=opus

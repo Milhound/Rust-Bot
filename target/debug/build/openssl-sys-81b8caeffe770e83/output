@@ -1,3 +1,4 @@
-cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu
+cargo:rustc-link-search=native=/usr/local/Cellar/openssl/1.0.2g/lib
 cargo:rustc-link-lib=ssl
 cargo:rustc-link-lib=crypto
+cargo:include=/usr/local/Cellar/openssl/1.0.2g/include
