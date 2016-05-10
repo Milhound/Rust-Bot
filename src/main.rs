@@ -59,6 +59,26 @@ fn main() {
                 let command = split.next().unwrap_or("");
                 let argument = split.next().unwrap_or("");
 
+                let voice_channel = state.find_voice_user(message.author.id);
+
+                if command.eq_ignore_ascii_case("/play") {
+                    println!("Play command called");
+
+                    if let Some((server_id, channel_id)) = voice_channel {
+                        let voice = connection.voice(server_id);
+                        voice.connect(channel_id);
+                        if !argument.eq_ignore_ascii_case(""){
+                            voice.play(discord::voice::open_ytdl_stream(&argument).unwrap());
+                        }
+                    } else {
+                        let _ = discord.send_message(&message.channel_id, "You must be in a voice channel to play Music", "", false);
+                    }
+                }
+                if command.eq_ignore_ascii_case("/end"){
+                    if let Some((server_id, _)) = voice_channel {
+                        connection.drop_voice(server_id);
+                    }
+                }
                 match message.content.as_ref() {
 
                     "/cat" => {
@@ -83,18 +103,17 @@ fn main() {
                     "/quit" => {println!("Quitting..."); break},
                         _ => continue,
                 }
-
-                if command.eq_ignore_ascii_case("/play") {
-                    println!("Play command called");
-                    let voice_channel = state.find_voice_user(message.author.id);
-                    if let Some((server_id, channel_id)) = voice_channel {
-                        let voice = connection.voice(server_id);
-                        voice.connect(channel_id);
-                        if !argument.eq_ignore_ascii_case(""){
-                            voice.play(discord::voice::open_ytdl_stream(&argument).unwrap());
-                        }
-                    }
-                }
+			}
+            Event::VoiceStateUpdate(server_id, _) => {
+				// If someone moves/hangs up, and we are in a voice channel,
+				if let Some(cur_channel) = connection.voice(server_id).current_channel() {
+					// and our current voice channel is empty, disconnect from voice
+					if let Some(srv) = state.servers().iter().find(|srv| srv.id == server_id) {
+						if srv.voice_states.iter().filter(|vs| vs.channel_id == Some(cur_channel)).count() <= 1 {
+							connection.voice(server_id).disconnect();
+						}
+					}
+				}
 			}
 			_ => {}
 		}
