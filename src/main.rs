@@ -8,10 +8,10 @@ use std::env;
 use std::error::Error;
 
 fn get_cat() -> Result<String, Box<Error>> {
-    let url: &str = "http://random.cat/meow";
     use std::io::Read;
     use serde_json::Value;
 
+    let url: &str = "http://random.cat/meow";
     let client = hyper::Client::new();
     let mut response = try!(client.get(url).send());
     let mut buff = String::new();
@@ -20,6 +20,22 @@ fn get_cat() -> Result<String, Box<Error>> {
     let data = decode.as_object().expect("Invalid JSON");
     let file = data.get("file").expect("File not found");
     Ok(file.as_string().unwrap().to_string())
+}
+
+fn get_insult() -> Result<String, Box<Error>> {
+    use std::io::Read;
+    use serde_json::Value;
+
+    let url: &str = "http://quandyfactory.com/insult/json";
+    let client = hyper::Client::new();
+    let mut response = try!(client.get(url).send());
+    let mut buff = String::new();
+    try!(response.read_to_string(&mut buff));
+    let decode: Value = try!(serde_json::from_str(&buff));
+    let data = decode.as_object().expect("Invalid JSON");
+    let item = data.get("insult").expect("Unable to locate insult key.");
+    Ok(item.as_string().unwrap().to_string())
+
 }
 
 fn main() {
@@ -77,6 +93,13 @@ fn main() {
                 if command.eq_ignore_ascii_case("/end"){
                     if let Some((server_id, _)) = voice_channel {
                         connection.drop_voice(server_id);
+                    }
+                }
+                if command.eq_ignore_ascii_case("/insult"){
+                    for mention in message.mentions{
+                        if let Ok(insult) = get_insult() {
+                            let _ = discord.send_message(&message.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
+                        }
                     }
                 }
                 match message.content.as_ref() {
