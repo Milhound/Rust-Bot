@@ -2,7 +2,7 @@ extern crate discord;
 extern crate hyper;
 extern crate serde_json;
 
-use discord::Discord;
+use discord::{Discord, State};
 use discord::model::Event;
 use std::env;
 use std::error::Error;
@@ -24,19 +24,47 @@ fn get_cat() -> Result<String, Box<Error>> {
 
 fn main() {
     let discord = Discord::from_bot_token(&env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN")).expect("Discord Token Error");
-    println!("{:?}", &env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN"));
-	let (mut connection, _) = discord.connect().expect("Connection Failed.");
-	println!("Ready...");
+	let (mut connection, ready) = discord.connect().expect("Connection Failed.");
+	println!("Rust Bot Ready...");
+
+    let mut state = State::new(ready);
 
     loop {
-		match connection.recv_event() {
-			Ok(Event::MessageCreate(message)) => {
+        let event = match connection.recv_event() {
+            Ok(event) => event,
+            Err(err) => {
+                println!("[Warning] Receive error: {:?}", err);
+				if let discord::Error::WebSocket(..) = err {
+					// Handle the websocket connection being dropped
+					let (new_connection, ready) = discord.connect().expect("connect failed");
+					connection = new_connection;
+					state = State::new(ready);
+					println!("[Ready] Reconnected successfully.");
+				}
+				if let discord::Error::Closed(..) = err {
+					break
+				}
+				continue
+            },
+        };
+
+        state.update(&event);
+
+        match event {
+			Event::MessageCreate(message) => {
+                use std::ascii::AsciiExt;
 				println!("{} says: {}", message.author.name, message.content);
+
+                let mut split = message.content.split(" ");
+                let command = split.next().unwrap_or("");
+                let argument = split.next().unwrap_or("");
+
                 match message.content.as_ref() {
 
                     "/cat" => {
                         if let Ok(s) = get_cat() {
                             println!("{}", s);
+                            let _ = discord.send_message(&message.channel_id, &s, "", false);
                         }
                     },
                     "/ping" => {
@@ -55,13 +83,20 @@ fn main() {
                     "/quit" => {println!("Quitting..."); break},
                         _ => continue,
                 }
+
+                if command.eq_ignore_ascii_case("/play") {
+                    println!("Play command called");
+                    let voice_channel = state.find_voice_user(message.author.id);
+                    if let Some((server_id, channel_id)) = voice_channel {
+                        let voice = connection.voice(server_id);
+                        voice.connect(channel_id);
+                        if !argument.eq_ignore_ascii_case(""){
+                            voice.play(discord::voice::open_ytdl_stream(&argument).unwrap());
+                        }
+                    }
+                }
 			}
-			Ok(_) => {}
-			Err(discord::Error::Closed(code, body)) => {
-				println!("Gateway closed on us with code {:?}: {}", code, String::from_utf8_lossy(&body));
-				break
-			}
-			Err(err) => println!("Receive error: {:?}", err)
+			_ => {}
 		}
 	}
 	// Log out from the API
