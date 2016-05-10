@@ -84,7 +84,10 @@ fn main() {
                         let voice = connection.voice(server_id);
                         voice.connect(channel_id);
                         if !argument.eq_ignore_ascii_case(""){
-                            voice.play(discord::voice::open_ytdl_stream(&argument).unwrap());
+                            match discord::voice::open_ytdl_stream(&argument) {
+                            Ok(audio) => voice.play(audio),
+                            Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid YouTube URL, try again.", "", false);}
+                            }
                         }
                     } else {
                         let _ = discord.send_message(&message.channel_id, "You must be in a voice channel to play Music", "", false);
