@@ -6,6 +6,7 @@ use discord::{Discord, State};
 use discord::model::Event;
 use std::env;
 use std::error::Error;
+use std::io::Read;
 
 fn get_cat() -> Result<String, Box<Error>> {
     use std::io::Read;
@@ -39,10 +40,18 @@ fn get_insult() -> Result<String, Box<Error>> {
 }
 
 fn main() {
-    let discord = Discord::from_bot_token(&env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN")).expect("Discord Token Error");
+    let mut discord = Discord::from_bot_token(&env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN")).expect("Discord Token Error");
 	let (mut connection, ready) = discord.connect().expect("Connection Failed.");
 	println!("Rust Bot Ready...");
 
+    /* USED TO SET THE AVATAR OF THE BOT TO "src/img.txt" BASE64 ENCODED
+    let mut file = vec![];
+    std::fs::File::open("src/img.txt").expect("src/img.txt").read_to_end(&mut file).unwrap();
+    let file = String::from_utf8(file).unwrap();
+
+    discord.edit_profile(|x| {x.avatar(Some(&file))}).expect("Failed to update avatar");
+    */
+    
     let mut state = State::new(ready);
 
     loop {
