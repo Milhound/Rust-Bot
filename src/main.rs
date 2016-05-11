@@ -76,7 +76,6 @@ fn main() {
                 let argument = split.next().unwrap_or("");
 
                 let voice_channel = state.find_voice_user(message.author.id);
-
                 if command.eq_ignore_ascii_case("/play") {
                     println!("Play command called");
 
@@ -99,9 +98,39 @@ fn main() {
                     }
                 }
                 if command.eq_ignore_ascii_case("/insult"){
-                    for mention in message.mentions{
+                    for mention in &message.mentions{
                         if let Ok(insult) = get_insult() {
                             let _ = discord.send_message(&message.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
+                        }
+                    }
+                }
+                if command.eq_ignore_ascii_case("/wipe") {
+                    if message.author.id.0 == 167693414156992512 {
+                        if !argument.eq_ignore_ascii_case(""){
+                            match argument.parse::<u64>() {
+                                Ok(n) => {
+                                    let test = discord.get_messages(&message.channel_id, None, None, Some(n + 1));
+                                    if let Ok(messages) = test {
+                                        for  wipe_msg in &messages {
+                                           let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
+                                       }
+                                    }
+                                },
+                                Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid number", "", false); }
+                            }
+                        } else {
+                            // User failed to give a #
+                            let _ = discord.delete_message(&message.channel_id, &message.id);
+                        }
+                    } else {
+                        // Unauthorized request
+                        let _ = discord.send_message(&message.channel_id, "You are not authorized to use my Wipe command.", "", false);
+                    }
+                }
+                if command.eq_ignore_ascii_case("/user") && message.author.id.0 == 167693414156992512{
+                    if !argument.eq_ignore_ascii_case(""){
+                        for mentioned in &message.mentions{
+                            println!("{:?}", mentioned);
                         }
                     }
                 }
@@ -119,9 +148,6 @@ fn main() {
                     },
                     "/info" => { let _ = discord.send_message(&message.channel_id,
                         "Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.", "", false);
-                    },
-                    "/test" => { let _ = discord.send_message(&message.channel_id,
-                        "This is a reply to the test.", "", false);
                     },
                     "/help" => { let _ = discord.send_message(&message.channel_id,
                         "If your seeking help from this bot you may not find it.", "", false);
