@@ -1,12 +1,15 @@
 extern crate discord;
 extern crate hyper;
 extern crate serde_json;
+extern crate rand;
 
 use discord::{Discord, State};
 use discord::model::Event;
 use std::env;
 use std::error::Error;
 use std::io::Read;
+use rand::Rng;
+
 
 fn get_cat() -> Result<String, Box<Error>> {
     use std::io::Read;
@@ -144,13 +147,18 @@ fn main() {
                         }
                     }
                 }
-                match message.content.as_ref() {
+                match message.content.to_lowercase().as_ref() {
 
                     "/cat" => {
                         if let Ok(s) = get_cat() {
                             println!("{}", s);
                             let _ = discord.send_message(&message.channel_id, &s, "", false);
                         }
+                    },
+                    "/boom" => {
+                        let images = vec!["src/boom.png", "src/boom1.png", "src/boom2.png"];
+                        let file = std::fs::File::open(rand::thread_rng().choose(&images).expect("image src incorrect")).expect("Missing image");
+                        let _ = discord.send_file(&message.channel_id, "Badda BOOM!!!", file, "boom1.png");
                     },
                     "/ping" => {
                         let pong = format!("<@{:?}>, Pong", &message.author.id.0);
