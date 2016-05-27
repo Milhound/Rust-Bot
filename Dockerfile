@@ -7,6 +7,7 @@ ENV RUST_VERSION=1.9.0
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential \
+    libsodium13 \
     ca-certificates \
     curl \
     git \
@@ -24,7 +25,7 @@ RUN apt-get update && \
     /tmp/* \
     /var/tmp/* \
     && mkdir /source
-    
 VOLUME ["/source"]
 WORKDIR /source
+CMD ["cargo","update"]
 CMD ["cargo", "run"]
