@@ -170,6 +170,21 @@ fn main() {
                     "/help" => { let _ = discord.send_message(&message.channel_id,
                         "If your seeking help from this bot you may not find it.", "", false);
                     },
+                    "/toast" => { let _ = discord.send_message(&message.channel_id,
+                        &(format!("```\n ") +
+                        "Toast!\n" +
+                        "\n" +
+                        "      ______\n" +
+                        " ____((     )_\n" +
+                        "|\'->==))   (= \\\n" +
+                        "|  \\ ||_____|_ \\\n" +
+                        "|[> \\___________\\\n" +
+                        "| | |            |                                    |\n" +
+                        " \\  |            |             .--.                   |\n" +
+                        "  \\ |            |)---.   .---'    `-.         .----(]|\n" +
+                        "   \\|____________|     `-'            `.     .'       |\n" +
+                        "                                         `---'        |\n" +
+                        " ``` "), "", false);},
                     "/quit" => {println!("Quitting..."); break},
                         _ => continue,
                 }
