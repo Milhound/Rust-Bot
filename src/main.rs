@@ -185,7 +185,11 @@ fn main() {
                         "   \\|____________|     `-'            `.     .'       |\n" +
                         "                                         `---'        |\n" +
                         " ``` "), "", false);},
-                    "/quit" => {println!("Quitting..."); break},
+                    "/quit" => { if message.author.id.0 == 167693414156992512 {
+                            println!("Quitting..."); 
+                            break
+                        }
+                    },
                         _ => continue,
                 }
 			}
