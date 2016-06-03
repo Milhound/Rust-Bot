@@ -168,12 +168,27 @@ fn main() {
                         "Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.", "", false);
                     },
                     "/help" => { let _ = discord.send_message(&message.channel_id,
-                        "If your seeking help from this bot you may not find it.", "", false);
+                        "This bot is currently under Development by Milhound\n\
+                        ``` \n\
+                        Commands: \n\
+                        /cat -> Random Cat Picture \n\
+                        /boom -> Random Explosion (of 3) \n\
+                        /ping -> Pong! \n\
+                        /toast -> Tasty Toast \n\
+                        /play (url) -> Plays youtube in voice channel \n\
+                        /insult (@mention) -> Insults the mention(s) \n\
+                        \n\
+                        In Development: \n\
+                        Inspirational Quotes \n\
+                        Slap (@mention) \n\
+                        Temperature Conversion \n\
+                        International Times \n\
+                        ```\n\
+                        If you have anything you'd like to see in the future DM Milhound.", "", false);
                     },
                     "/toast" => { let _ = discord.send_message(&message.channel_id,
                         &(format!("```\n ") +
-                        "Toast!\n" +
-                        "\n" +
+                        "Toast!\n\n" +
                         "      ______\n" +
                         " ____((     )_\n" +
                         "|\'->==))   (= \\\n" +
