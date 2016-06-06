@@ -10,6 +10,12 @@ use std::error::Error;
 use std::io::Read;
 use rand::Rng;
 
+fn warn<T, E: ::std::fmt::Debug>(result: Result<T, E>) {
+    match result {
+        Ok(_) => {},
+            Err(err) => println!("[Warning] {:?}", err)
+    }
+}
 
 fn get_cat() -> Result<String, Box<Error>> {
     use std::io::Read;
@@ -90,19 +96,22 @@ fn main() {
 
                 let voice_channel = state.find_voice_user(message.author.id);
                 if command.eq_ignore_ascii_case("/play") {
-                    println!("Play command called");
-
-                    if let Some((server_id, channel_id)) = voice_channel {
-                        let voice = connection.voice(server_id);
-                        voice.connect(channel_id);
-                        if !argument.eq_ignore_ascii_case(""){
-                            match discord::voice::open_ytdl_stream(&argument) {
-                            Ok(audio) => voice.play(audio),
-                            Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid YouTube URL, try again.", "", false);}
+                   let output = if let Some((server_id, channel_id)) = voice_channel {
+                       match discord::voice::open_ytdl_stream(&argument) {
+                           Ok(stream) => {
+                               let voice = connection.voice(server_id);
+                               voice.set_deaf(true);
+                               voice.connect(channel_id);
+                               voice.play(stream);
+                               String::new()
+                            },
+                            Err(error) => format!("Error: {}", error),
                             }
-                        }
-                    } else {
-                        let _ = discord.send_message(&message.channel_id, "You must be in a voice channel to play Music", "", false);
+                    } else { 
+                        "You must be in a voice channel to play music.".to_owned()
+                    };
+                    if output.len() > 0 {
+                        warn(discord.send_message(&message.channel_id, &output, "", false));
                     }
                 }
                 if command.eq_ignore_ascii_case("/end"){
