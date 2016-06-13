@@ -1,4 +1,5 @@
 # Extras
+.gitignore
 run
 Changelog.md
 Dockerfile
