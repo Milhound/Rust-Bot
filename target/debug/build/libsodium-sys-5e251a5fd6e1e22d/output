@@ -1,2 +1,0 @@
-cargo:rustc-link-search=native=/usr/local/Cellar/libsodium/1.0.8/lib
-cargo:rustc-link-lib=sodium
