@@ -10,6 +10,47 @@ use std::error::Error;
 use std::io::Read;
 use rand::Rng;
 
+const HELP_TEXT: &'static str = r#"
+This bot is currently under Development by Milhound
+```
+Commands:
+/cat -> Random Cat Picture
+/boom -> Random Explosion (of 3)
+/ping -> Pong!
+/toast -> Tasty Toast
+/play (url) -> Plays youtube in voice channel
+/insult (@mention) -> Insults the mention(s)
+
+In Development:
+Inspirational Quotes
+Slap (@mention)
+Temperature Conversion
+International Times
+```
+If you have anything you'd like to see in the future DM Milhound.
+"#;
+
+const INFO_TEXT: &'static str = "\
+Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.\
+";
+
+const TOAST_TEXT: &'static str = r#"
+```
+Toast!
+
+      ______
+ ____((     )_
+|'->==))   (= \
+|  \ ||_____|_ \
+|[> \___________\
+| | |            |                                    |
+ \  |            |             .--.                   |
+  \ |            |)---.   .---'    `-.         .----(]|
+   \|____________|     `-'            `.     .'       |
+                                         `---'        |
+```
+"#;
+
 fn warn<T, E: ::std::fmt::Debug>(result: Result<T, E>) {
     match result {
         Ok(_) => {},
@@ -49,7 +90,6 @@ fn get_insult() -> Result<String, Box<Error>> {
 }
 
 fn main() {
-
     let discord = Discord::from_bot_token(&env::var("RUST_BOT_TOKEN").expect("DISCORD TOKEN")).expect("Discord Token Error");
 	let (mut connection, ready) = discord.connect().expect("Connection Failed.");
 	println!("Rust Bot Ready...");
@@ -157,7 +197,6 @@ fn main() {
                     }
                 }
                 match message.content.to_lowercase().as_ref() {
-
                     "/cat" => {
                         if let Ok(s) = get_cat() {
                             println!("{}", s);
@@ -173,42 +212,15 @@ fn main() {
                         let pong = format!("<@{:?}>, Pong", &message.author.id.0);
                         let _ = discord.send_message(&message.channel_id, &pong , "", false);
                     },
-                    "/info" => { let _ = discord.send_message(&message.channel_id,
-                        "Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.", "", false);
+                    "/info" => {
+                        let _ = discord.send_message(&message.channel_id, INFO_TEXT, "", false);
                     },
-                    "/help" => { let _ = discord.send_message(&message.channel_id,
-                        "This bot is currently under Development by Milhound\n\
-                        ``` \n\
-                        Commands: \n\
-                        /cat -> Random Cat Picture \n\
-                        /boom -> Random Explosion (of 3) \n\
-                        /ping -> Pong! \n\
-                        /toast -> Tasty Toast \n\
-                        /play (url) -> Plays youtube in voice channel \n\
-                        /insult (@mention) -> Insults the mention(s) \n\
-                        \n\
-                        In Development: \n\
-                        Inspirational Quotes \n\
-                        Slap (@mention) \n\
-                        Temperature Conversion \n\
-                        International Times \n\
-                        ```\n\
-                        If you have anything you'd like to see in the future DM Milhound.", "", false);
+                    "/help" => {
+                        let _ = discord.send_message(&message.channel_id, HELP_TEXT, "", false);
                     },
-                    "/toast" => { let _ = discord.send_message(&message.channel_id,
-                        &(format!("```\n ") +
-                        "Toast!\n\n" +
-                        "      ______\n" +
-                        " ____((     )_\n" +
-                        "|\'->==))   (= \\\n" +
-                        "|  \\ ||_____|_ \\\n" +
-                        "|[> \\___________\\\n" +
-                        "| | |            |                                    |\n" +
-                        " \\  |            |             .--.                   |\n" +
-                        "  \\ |            |)---.   .---'    `-.         .----(]|\n" +
-                        "   \\|____________|     `-'            `.     .'       |\n" +
-                        "                                         `---'        |\n" +
-                        " ``` "), "", false);},
+                    "/toast" => {
+                        let _ = discord.send_message(&message.channel_id, TOAST_TEXT, "", false);
+                    },
                     "/quit" => { if message.author.id.0 == 167693414156992512 {
                             println!("Quitting..."); 
                             break
