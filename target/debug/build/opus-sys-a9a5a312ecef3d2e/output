@@ -1,2 +1,0 @@
-cargo:rustc-link-search=native=/usr/local/Cellar/opus/1.1.2/lib
-cargo:rustc-link-lib=opus
