@@ -2,6 +2,7 @@ extern crate discord;
 extern crate hyper;
 extern crate serde_json;
 extern crate rand;
+extern crate xi_unicode;
 
 use discord::{Connection, Discord, State};
 use discord::model::{ChannelId, Event, Message, MessageId, User};

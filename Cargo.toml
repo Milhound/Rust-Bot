@@ -8,3 +8,4 @@ discord = { git = "https://github.com/SpaceManiac/discord-rs.git" }
 hyper = "0.9.6"
 serde_json = "0.7.1"
 rand = "0.3.14"
+xi-unicode = "0.0"
