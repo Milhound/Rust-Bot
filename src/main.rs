@@ -8,7 +8,10 @@ use discord::{Connection, Discord, State};
 use discord::model::{ChannelId, Event, Message, MessageId, User};
 use std::env;
 use std::error::Error;
+use std::iter;
+use std::fmt::Write;
 use rand::Rng;
+use xi_unicode::LineBreakIterator;
 
 const HELP_TEXT: &'static str = r#"
 This bot is currently under Development by Milhound
@@ -51,6 +54,17 @@ Toast!
 ```
 "#;
 
+const COW_TEXT: &'static str = r"
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+";
+
+const COWSAY_LINE_LENGTH: usize = 40;
+
 struct Request {
     user: User,
     command: Command,
@@ -65,6 +79,7 @@ enum Command {
     Info,
     Help,
     Toast,
+    Cowsay(String),
     Play(String),
     End,
     Insult(Vec<User>),
@@ -129,6 +144,10 @@ impl Request {
             }
             &Command::Toast => {
                 let _ = discord.send_message(&self.channel_id, TOAST_TEXT, "", false);
+            }
+            &Command::Cowsay(ref say) => {
+                let text = cowsay(say);
+                let _ = discord.send_message(&self.channel_id, &text[..], "", false);
             }
             &Command::Play(ref song_url) => {
                 let voice_channel = state.find_voice_user(self.user.id);
@@ -206,6 +225,10 @@ impl Command {
             "info" => Ok(Command::Info),
             "help" => Ok(Command::Help),
             "toast" => Ok(Command::Toast),
+            "cowsay" => {
+                let say = message.content[command.len() ..].trim();
+                Ok(Command::Cowsay(say.to_string()))
+            }
             "play" => Ok(Command::Play(argument.to_string())),
             "end" => Ok(Command::End),
             "insult" => Ok(Command::Insult(message.mentions.clone())),
@@ -261,7 +284,52 @@ fn get_insult() -> Result<String, Box<Error>> {
     let data = decode.as_object().expect("Invalid JSON");
     let item = data.get("insult").expect("Unable to locate insult key.");
     Ok(item.as_string().unwrap().to_string())
+}
 
+/// Cow says
+fn cowsay(say: &str) -> String {
+    let mut lines = vec![];
+    let break_offsets = LineBreakIterator::new(say).map(|(offset, _hard)| offset);
+    let mut line_start = 0;
+    let mut line_end = 0;
+    for offset in break_offsets {
+        if say[line_start..offset].chars().count() <= COWSAY_LINE_LENGTH {
+            // Line within limit
+            line_end = offset;
+        } else {
+            // Limit exceeded
+            lines.push(say[line_start .. line_end].to_string());
+            line_start = line_end;
+            line_end = offset;
+        }
+    }
+    lines.push(say[line_start..].to_string());
+    let border_len = lines.iter().map(|line| line.chars().count()).max().unwrap();
+    // pad to constant length
+    for line in &mut lines {
+        let pad: String = iter::repeat(" ").take(border_len - line.chars().count()).collect();
+        line.push_str(&pad[..]);
+    }
+    let mut text = "```".to_string();
+    let top: String = iter::repeat("_").take(border_len).collect();
+    let bottom: String = iter::repeat("‾").take(border_len).collect();
+    let _ = writeln!(&mut text, "  {}", top);
+    for (i, line) in lines.iter().enumerate() {
+        let s = if lines.len() == 1 {
+            format!(r"< {} >", line)
+        } else if i == 0 {
+            format!(r"/ {} \\", line)
+        } else if i == lines.len() - 1 {
+            format!(r"\\ {} /", line)
+        } else {
+            format!(r"| {} |", line)
+        };
+        text.push_str(&s[..]);
+        text.push_str("\n");
+    }
+    let _ = write!(&mut text, "  {}", bottom);
+    text.push_str(COW_TEXT);
+    text
 }
 
 fn main() {
