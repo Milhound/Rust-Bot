@@ -3,11 +3,10 @@ extern crate hyper;
 extern crate serde_json;
 extern crate rand;
 
-use discord::{Discord, State};
-use discord::model::Event;
+use discord::{Connection, Discord, State};
+use discord::model::{ChannelId, Event, Message, MessageId, User};
 use std::env;
 use std::error::Error;
-use std::io::Read;
 use rand::Rng;
 
 const HELP_TEXT: &'static str = r#"
@@ -50,6 +49,181 @@ Toast!
                                          `---'        |
 ```
 "#;
+
+struct Request {
+    user: User,
+    command: Command,
+    channel_id: ChannelId,
+    message_id: MessageId,
+}
+
+enum Command {
+    Cat,
+    Boom,
+    Ping,
+    Info,
+    Help,
+    Toast,
+    Play(String),
+    End,
+    Insult(Vec<User>),
+    Wipe(Option<u64>),
+    User(Vec<User>),
+    Quit,
+}
+
+enum CommandParseError {
+    NotACommand,
+    UnknownCommand,
+    InvalidArgument,
+}
+
+impl Request {
+    fn from_message(message: &Message) -> Result<Self, CommandParseError> {
+        Command::parse(message).map(|command| {
+            Request {
+                command: command,
+                user: message.author.clone(),
+                channel_id: message.channel_id,
+                message_id: message.id,
+            }
+        })
+    }
+
+    /// Checks whether the user is authorized to request this command.
+    fn is_authorized(&self) -> bool {
+        match &self.command {
+            &Command::Wipe(_) |
+            &Command::User(_) |
+            &Command::Quit => {
+                self.user.id.0 == 167693414156992512
+            }
+            _ => true
+        }
+    }
+
+    /// Runs this command.
+    fn execute(&self, connection: &mut Connection, state: &State, discord: &Discord) -> bool {
+        match &self.command {
+            &Command::Cat => {
+                if let Ok(s) = get_cat() {
+                    println!("{}", s);
+                    let _ = discord.send_message(&self.channel_id, &s, "", false);
+                }
+            }
+            &Command::Boom => {
+                let images = vec!["src/boom.png", "src/boom1.png", "src/boom2.png"];
+                let file = std::fs::File::open(rand::thread_rng().choose(&images).expect("image src incorrect")).expect("Missing image");
+                let _ = discord.send_file(&self.channel_id, "Badda BOOM!!!", file, "boom1.png");
+            }
+            &Command::Ping => {
+                let pong = format!("<@{:?}>, Pong", &self.user.id.0);
+                let _ = discord.send_message(&self.channel_id, &pong , "", false);
+            }
+            &Command::Info => {
+                let _ = discord.send_message(&self.channel_id, INFO_TEXT, "", false);
+            }
+            &Command::Help => {
+                let _ = discord.send_message(&self.channel_id, HELP_TEXT, "", false);
+            }
+            &Command::Toast => {
+                let _ = discord.send_message(&self.channel_id, TOAST_TEXT, "", false);
+            }
+            &Command::Play(ref song_url) => {
+                let voice_channel = state.find_voice_user(self.user.id);
+                let output = if let Some((server_id, channel_id)) = voice_channel {
+                   match discord::voice::open_ytdl_stream(&song_url[..]) {
+                       Ok(stream) => {
+                           let voice = connection.voice(server_id);
+                           voice.set_deaf(true);
+                           voice.connect(channel_id);
+                           voice.play(stream);
+                           String::new()
+                        },
+                        Err(error) => format!("Error: {}", error),
+                        }
+                } else {
+                    "You must be in a voice channel to play music.".to_owned()
+                };
+                if output.len() > 0 {
+                    warn(discord.send_message(&self.channel_id, &output, "", false));
+                }
+            }
+            &Command::End => {
+                let voice_channel = state.find_voice_user(self.user.id);
+                if let Some((server_id, _)) = voice_channel {
+                    connection.drop_voice(server_id);
+                }
+            }
+            &Command::Insult(ref mentions) => {
+                for mention in mentions {
+                    if let Ok(insult) = get_insult() {
+                        let _ = discord.send_message(&self.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
+                    }
+                }
+            }
+            &Command::Wipe(Some(num)) => {
+                let test = discord.get_messages(&self.channel_id, None, None, Some(num + 1));
+                if let Ok(messages) = test {
+                    for  wipe_msg in &messages {
+                        let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
+                    }
+                }
+            }
+            &Command::Wipe(None) => {
+                let _ = discord.delete_message(&self.channel_id, &self.message_id);
+            }
+            &Command::User(ref mentions) => {
+                for mention in mentions {
+                    println!("{:?}", mention);
+                }
+            }
+            &Command::Quit => {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+impl Command {
+    /// Parses a command.
+    fn parse(message: &Message) -> Result<Self, CommandParseError> {
+        if !message.content.starts_with("/") {
+            // This message is not a command.
+            return Err(CommandParseError::NotACommand);
+        }
+
+        let mut split = message.content.split(" ");
+        let command = split.next().unwrap_or("");
+        let argument = split.next().unwrap_or("");
+
+        match &command[1..] {
+            "cat" => Ok(Command::Cat),
+            "boom" => Ok(Command::Boom),
+            "ping" => Ok(Command::Ping),
+            "info" => Ok(Command::Info),
+            "help" => Ok(Command::Help),
+            "toast" => Ok(Command::Toast),
+            "play" => Ok(Command::Play(argument.to_string())),
+            "end" => Ok(Command::End),
+            "insult" => Ok(Command::Insult(message.mentions.clone())),
+            "wipe" => {
+                if argument.is_empty() {
+                    Ok(Command::Wipe(None))
+                } else {
+                    match argument.parse() {
+                        Ok(num) => Ok(Command::Wipe(Some(num))),
+                        Err(_) => Err(CommandParseError::InvalidArgument),
+                    }
+                }
+            }
+            "user" => Ok(Command::User(message.mentions.clone())),
+            "quit" => Ok(Command::Quit),
+            _ => Err(CommandParseError::UnknownCommand),
+        }
+    }
+}
 
 fn warn<T, E: ::std::fmt::Debug>(result: Result<T, E>) {
     match result {
@@ -127,106 +301,29 @@ fn main() {
 
         match event {
 			Event::MessageCreate(message) => {
-                use std::ascii::AsciiExt;
 				println!("{} says: {}", message.author.name, message.content);
 
-                let mut split = message.content.split(" ");
-                let command = split.next().unwrap_or("");
-                let argument = split.next().unwrap_or("");
-
-                let voice_channel = state.find_voice_user(message.author.id);
-                if command.eq_ignore_ascii_case("/play") {
-                   let output = if let Some((server_id, channel_id)) = voice_channel {
-                       match discord::voice::open_ytdl_stream(&argument) {
-                           Ok(stream) => {
-                               let voice = connection.voice(server_id);
-                               voice.set_deaf(true);
-                               voice.connect(channel_id);
-                               voice.play(stream);
-                               String::new()
-                            },
-                            Err(error) => format!("Error: {}", error),
-                            }
-                    } else { 
-                        "You must be in a voice channel to play music.".to_owned()
-                    };
-                    if output.len() > 0 {
-                        warn(discord.send_message(&message.channel_id, &output, "", false));
-                    }
-                }
-                if command.eq_ignore_ascii_case("/end"){
-                    if let Some((server_id, _)) = voice_channel {
-                        connection.drop_voice(server_id);
-                    }
-                }
-                if command.eq_ignore_ascii_case("/insult"){
-                    for mention in &message.mentions{
-                        if let Ok(insult) = get_insult() {
-                            let _ = discord.send_message(&message.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
-                        }
-                    }
-                }
-                if command.eq_ignore_ascii_case("/wipe") {
-                    if message.author.id.0 == 167693414156992512 {
-                        if !argument.eq_ignore_ascii_case(""){
-                            match argument.parse::<u64>() {
-                                Ok(n) => {
-                                    let test = discord.get_messages(&message.channel_id, None, None, Some(n + 1));
-                                    if let Ok(messages) = test {
-                                        for  wipe_msg in &messages {
-                                           let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
-                                       }
-                                    }
-                                },
-                                Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid number", "", false); }
+                match Request::from_message(&message) {
+                    Ok(request) => {
+                        if request.is_authorized() {
+                            // Execute the command.
+                            let should_continue = request.execute(&mut connection, &state, &discord);
+                            if !should_continue {
+                                break;
                             }
                         } else {
-                            // User failed to give a #
-                            let _ = discord.delete_message(&message.channel_id, &message.id);
-                        }
-                    } else {
-                        // Unauthorized request
-                        let _ = discord.send_message(&message.channel_id, "You are not authorized to use my Wipe command.", "", false);
-                    }
-                }
-                if command.eq_ignore_ascii_case("/user") && message.author.id.0 == 167693414156992512{
-                    if !argument.eq_ignore_ascii_case(""){
-                        for mentioned in &message.mentions{
-                            println!("{:?}", mentioned);
+                            // Unauthorized request.
+                            let _ = discord.send_message(&message.channel_id, "You are not authorized to use this command.", "", false);
                         }
                     }
-                }
-                match message.content.to_lowercase().as_ref() {
-                    "/cat" => {
-                        if let Ok(s) = get_cat() {
-                            println!("{}", s);
-                            let _ = discord.send_message(&message.channel_id, &s, "", false);
+                    Err(error) => {
+                        match error {
+                            CommandParseError::InvalidArgument => {
+                                let _ = discord.send_message(&message.channel_id, "Invalid argument", "", false);
+                            }
+                            _ => {}
                         }
-                    },
-                    "/boom" => {
-                        let images = vec!["src/boom.png", "src/boom1.png", "src/boom2.png"];
-                        let file = std::fs::File::open(rand::thread_rng().choose(&images).expect("image src incorrect")).expect("Missing image");
-                        let _ = discord.send_file(&message.channel_id, "Badda BOOM!!!", file, "boom1.png");
-                    },
-                    "/ping" => {
-                        let pong = format!("<@{:?}>, Pong", &message.author.id.0);
-                        let _ = discord.send_message(&message.channel_id, &pong , "", false);
-                    },
-                    "/info" => {
-                        let _ = discord.send_message(&message.channel_id, INFO_TEXT, "", false);
-                    },
-                    "/help" => {
-                        let _ = discord.send_message(&message.channel_id, HELP_TEXT, "", false);
-                    },
-                    "/toast" => {
-                        let _ = discord.send_message(&message.channel_id, TOAST_TEXT, "", false);
-                    },
-                    "/quit" => { if message.author.id.0 == 167693414156992512 {
-                            println!("Quitting..."); 
-                            break
-                        }
-                    },
-                        _ => continue,
+                    }
                 }
 			}
             Event::VoiceStateUpdate(server_id, _) => {
