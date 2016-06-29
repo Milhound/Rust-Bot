@@ -135,98 +135,103 @@ fn main() {
                 let argument = split.next().unwrap_or("");
 
                 let voice_channel = state.find_voice_user(message.author.id);
-                if command.eq_ignore_ascii_case("/play") {
-                   let output = if let Some((server_id, channel_id)) = voice_channel {
-                       match discord::voice::open_ytdl_stream(&argument) {
-                           Ok(stream) => {
-                               let voice = connection.voice(server_id);
-                               voice.set_deaf(true);
-                               voice.connect(channel_id);
-                               voice.play(stream);
-                               String::new()
-                            },
-                            Err(error) => format!("Error: {}", error),
-                            }
-                    } else { 
-                        "You must be in a voice channel to play music.".to_owned()
-                    };
-                    if output.len() > 0 {
-                        warn(discord.send_message(&message.channel_id, &output, "", false));
-                    }
+
+                if !command.starts_with("/") {
+                    // This message is not a command.
+                    continue;
                 }
-                if command.eq_ignore_ascii_case("/end"){
-                    if let Some((server_id, _)) = voice_channel {
-                        connection.drop_voice(server_id);
-                    }
-                }
-                if command.eq_ignore_ascii_case("/insult"){
-                    for mention in &message.mentions{
-                        if let Ok(insult) = get_insult() {
-                            let _ = discord.send_message(&message.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
-                        }
-                    }
-                }
-                if command.eq_ignore_ascii_case("/wipe") {
-                    if message.author.id.0 == 167693414156992512 {
-                        if !argument.eq_ignore_ascii_case(""){
-                            match argument.parse::<u64>() {
-                                Ok(n) => {
-                                    let test = discord.get_messages(&message.channel_id, None, None, Some(n + 1));
-                                    if let Ok(messages) = test {
-                                        for  wipe_msg in &messages {
-                                           let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
-                                       }
-                                    }
-                                },
-                                Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid number", "", false); }
-                            }
-                        } else {
-                            // User failed to give a #
-                            let _ = discord.delete_message(&message.channel_id, &message.id);
-                        }
-                    } else {
-                        // Unauthorized request
-                        let _ = discord.send_message(&message.channel_id, "You are not authorized to use my Wipe command.", "", false);
-                    }
-                }
-                if command.eq_ignore_ascii_case("/user") && message.author.id.0 == 167693414156992512{
-                    if !argument.eq_ignore_ascii_case(""){
-                        for mentioned in &message.mentions{
-                            println!("{:?}", mentioned);
-                        }
-                    }
-                }
-                match message.content.to_lowercase().as_ref() {
-                    "/cat" => {
+
+                match &command[1..] {
+                    "cat" => {
                         if let Ok(s) = get_cat() {
                             println!("{}", s);
                             let _ = discord.send_message(&message.channel_id, &s, "", false);
                         }
                     },
-                    "/boom" => {
+                    "boom" => {
                         let images = vec!["src/boom.png", "src/boom1.png", "src/boom2.png"];
                         let file = std::fs::File::open(rand::thread_rng().choose(&images).expect("image src incorrect")).expect("Missing image");
                         let _ = discord.send_file(&message.channel_id, "Badda BOOM!!!", file, "boom1.png");
                     },
-                    "/ping" => {
+                    "ping" => {
                         let pong = format!("<@{:?}>, Pong", &message.author.id.0);
                         let _ = discord.send_message(&message.channel_id, &pong , "", false);
                     },
-                    "/info" => {
+                    "info" => {
                         let _ = discord.send_message(&message.channel_id, INFO_TEXT, "", false);
                     },
-                    "/help" => {
+                    "help" => {
                         let _ = discord.send_message(&message.channel_id, HELP_TEXT, "", false);
                     },
-                    "/toast" => {
+                    "toast" => {
                         let _ = discord.send_message(&message.channel_id, TOAST_TEXT, "", false);
                     },
-                    "/quit" => { if message.author.id.0 == 167693414156992512 {
-                            println!("Quitting..."); 
-                            break
+                    "play" => {
+                       let output = if let Some((server_id, channel_id)) = voice_channel {
+                           match discord::voice::open_ytdl_stream(&argument) {
+                               Ok(stream) => {
+                                   let voice = connection.voice(server_id);
+                                   voice.set_deaf(true);
+                                   voice.connect(channel_id);
+                                   voice.play(stream);
+                                   String::new()
+                                },
+                                Err(error) => format!("Error: {}", error),
+                                }
+                        } else {
+                            "You must be in a voice channel to play music.".to_owned()
+                        };
+                        if output.len() > 0 {
+                            warn(discord.send_message(&message.channel_id, &output, "", false));
                         }
+                    }
+                    "end" => {
+                        if let Some((server_id, _)) = voice_channel {
+                            connection.drop_voice(server_id);
+                        }
+                    }
+                    "insult" => {
+                        for mention in &message.mentions{
+                            if let Ok(insult) = get_insult() {
+                                let _ = discord.send_message(&message.channel_id, &format!("<@{:?}>, {}", mention.id.0, insult) , "", false);
+                            }
+                        }
+                    }
+                    "wipe" => {
+                        if message.author.id.0 == 167693414156992512 {
+                            if !argument.eq_ignore_ascii_case(""){
+                                match argument.parse::<u64>() {
+                                    Ok(n) => {
+                                        let test = discord.get_messages(&message.channel_id, None, None, Some(n + 1));
+                                        if let Ok(messages) = test {
+                                            for  wipe_msg in &messages {
+                                               let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
+                                           }
+                                        }
+                                    },
+                                    Err(_) => { let _ = discord.send_message(&message.channel_id, "Invalid number", "", false); }
+                                }
+                            } else {
+                                // User failed to give a #
+                                let _ = discord.delete_message(&message.channel_id, &message.id);
+                            }
+                        } else {
+                            // Unauthorized request
+                            let _ = discord.send_message(&message.channel_id, "You are not authorized to use my Wipe command.", "", false);
+                        }
+                    }
+                    "user" if message.author.id.0 == 167693414156992512 => {
+                        if !argument.eq_ignore_ascii_case("") {
+                            for mentioned in &message.mentions {
+                                println!("{:?}", mentioned);
+                            }
+                        }
+                    }
+                    "quit" if message.author.id.0 == 167693414156992512 => {
+                        println!("Quitting...");
+                        break
                     },
-                        _ => continue,
+                    _ => continue,
                 }
 			}
             Event::VoiceStateUpdate(server_id, _) => {
