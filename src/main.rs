@@ -4,7 +4,7 @@ extern crate serde_json;
 extern crate rand;
 extern crate xi_unicode;
 
-use discord::{Connection, Discord, State};
+use discord::{Connection, Discord, State, GetMessages};
 use discord::model::{ChannelId, Event, Message, MessageId, User};
 use std::env;
 use std::error::Error;
@@ -183,7 +183,7 @@ impl Request {
                 }
             }
             &Command::Wipe(Some(num)) => {
-                let test = discord.get_messages(&self.channel_id, None, None, Some(num + 1));
+                let test = discord.get_messages(self.channel_id, GetMessages::MostRecent, Some(num + 1));
                 if let Ok(messages) = test {
                     for  wipe_msg in &messages {
                         let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
