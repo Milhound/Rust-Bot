@@ -185,9 +185,9 @@ impl Request {
             &Command::Wipe(Some(num)) => {
                 let test = discord.get_messages(self.channel_id, GetMessages::MostRecent, Some(num + 1));
                 if let Ok(messages) = test {
-                    for  wipe_msg in &messages {
-                        let _ = discord.delete_message(&wipe_msg.channel_id, &wipe_msg.id);
-                    }
+                    let wipe_ids: Vec<_>;
+                    wipe_ids = messages.iter().map(|msg| msg.id).collect();
+                    let _ = discord.delete_messages(self.channel_id, &wipe_ids[..]);
                 }
             }
             &Command::Wipe(None) => {
