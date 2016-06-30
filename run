@@ -1,5 +1,0 @@
-#!/bin/bash
-
-docker stop Rust && docker rm Rust
-
-docker run -ti --name Rust -v $(pwd):/source/ --restart="always" --env-file env.list milhound/rust-bot
