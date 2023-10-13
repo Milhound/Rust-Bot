@@ -91,8 +91,7 @@ async fn get_cat() -> Result<String, Box<dyn Error>> {
                     let url = &data.first().unwrap().url;
                     Ok(url.to_string())
                 },
-                Err(err) => {
-                    println!("{}", err);
+                Err(_) => {
                     Err("Cat API returned a response that didn't include a url.".into())
                 },
             }
@@ -179,8 +178,17 @@ async fn main() {
                 if message.author.id == state.user().id {
                     continue;
                 }
-                println!("{} says: {}", message.author.name, message.content);
-                
+                let channel = discord.get_channel(message.channel_id).unwrap();
+                match channel{
+                    discord::model::Channel::Public(public_channel) => {
+                        let channel_name = public_channel.name;
+                        println!("{} in {} says: {}", message.author.name,channel_name, message.content);
+                    },
+                    discord::model::Channel::Private(_) => {
+                        println!("{} wispered Rusty: {}", message.author.name, message.content);
+                    },
+                    _ => ()
+                }
                 // reply to a command if there was one
                 let mut split = message.content.split(' ');
                 let first_word = split.next().unwrap_or("");
