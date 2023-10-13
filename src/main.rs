@@ -38,7 +38,7 @@ If you have anything you'd like to see in the future DM Milhound.
 "#;
 
 const INFO_TEXT: &'static str = "\
-Rust bot was programmed in Rust Lang, using Discord-rs: https://github.com/SpaceManiac/discord-rs.\
+Rusty was programmed in Rust, using Discord-rs. Check him out: https://github.com/Milhound/Rust-Bot/\
 ";
 
 const TOAST_TEXT: &'static str = r#"
