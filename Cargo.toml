@@ -5,7 +5,7 @@ authors = ["Daniel <Daniel.Milholland@icloud.com>"]
 
 [dependencies]
 discord = { git = "https://github.com/SpaceManiac/discord-rs.git" }
-hyper = "0.9"
 serde_json = "0.7"
 rand = "0.3"
 xi-unicode = "0.0"
+hyper = "1.1.0"
