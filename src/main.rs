@@ -69,17 +69,11 @@ const COW_TEXT: &'static str = r"
 
 const COWSAY_LINE_LENGTH: usize = 40;
 
-#[derive(Deserialize, Debug)]
-struct Cat {
-    url: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Insult {
-    insult: String,
-}
-
 async fn get_cat() -> Result<String, Box<dyn Error>> {
+    #[derive(Deserialize, Debug)]
+    struct Cat {
+        url: String,
+    }
     let url: &str = "https://api.thecatapi.com/v1/images/search";
     let client = reqwest::Client::new();
     let response = client.get(url).send().await.expect("Failed to send Cat request.");
@@ -103,6 +97,10 @@ async fn get_cat() -> Result<String, Box<dyn Error>> {
 }
 
 async fn get_insult() -> Result<String, Box<dyn Error>> {
+    #[derive(Deserialize, Debug)]
+    struct Insult {
+        insult: String,
+    }
     let url: &str = "http://quandyfactory.com/insult/json";
         let client = reqwest::Client::new();
     let response = client.get(url).send().await.expect("Failed to send insult request.");
